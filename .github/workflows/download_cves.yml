@@ -28,3 +28,11 @@ jobs:
       - name: Run download_cves.py
         run: |
           python download_cves.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add cves.csv
+          git commit -m 'Update CVEs'
+          git push
