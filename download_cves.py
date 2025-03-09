@@ -82,6 +82,9 @@ nvd['CVSS3_BaseScore'] = nvd['CVSS31_BaseScore'].combine_first(nvd['CVSS3_BaseSc
 # Drop the CVSS31_BaseScore column as it's now combined into CVSS3_BaseScore
 nvd = nvd.drop(columns=['CVSS31_BaseScore'])
 
+# Drop rows where CWE is 'Missing_Data'
+nvd = nvd[nvd['CWE'] != 'Missing_Data']
+
 # Filter CVEs
 print("Filtering CVEs...")
 filtered_cves = nvd[
