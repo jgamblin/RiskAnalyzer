@@ -172,3 +172,11 @@ cython_debug/
 
 nvd.jsonl
 .worktrees/
+
+# Node / Vite
+node_modules/
+dist/
+
+# Generated data
+src/data/enriched_cves.json
+cves.csv
