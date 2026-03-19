@@ -4,6 +4,8 @@
   import QuestionCard from './QuestionCard.svelte';
   import ChoiceButton from './ChoiceButton.svelte';
   import Explainer from './Explainer.svelte';
+  import EndRound from './EndRound.svelte';
+  import { getRoundSummary } from '../lib/engine/scoring.js';
   import { recordCategoryAnswer, recordTierAnswer } from '../lib/stores/progress.js';
 
   let questionTexts = {
@@ -50,71 +52,79 @@
       ? `Question ${$gameState.round.questionIndex + ($gameState.showExplainer ? 0 : 1)} of ${$gameState.round.length}`
       : ''
   );
+
+  let isRoundOver = $derived($gameState.round && $gameState.round.questionIndex >= $gameState.round.length);
+  let roundSummary = $derived(isRoundOver ? getRoundSummary($gameState.round, $gameState.adaptive?.tier) : null);
+  let gameConfig = $derived($gameState.round ? { mode: $gameState.round.mode, length: $gameState.round.length, category: $gameState.round.category, tier: $gameState.round.lockedTier } : null);
 </script>
 
 <div class="game-screen">
-  <div class="game-header">
-    <div class="game-info">
-      <span class="question-number">{questionNumber}</span>
-      <span class="score-display">{score}</span>
+  {#if !isRoundOver}
+    <div class="game-header">
+      <div class="game-info">
+        <span class="question-number">{questionNumber}</span>
+        <span class="score-display">{score}</span>
+      </div>
+      {#if $gameState.adaptive}
+        <TierIndicator tier={$gameState.adaptive.tier} />
+      {/if}
     </div>
-    {#if $gameState.adaptive}
-      <TierIndicator tier={$gameState.adaptive.tier} />
-    {/if}
-  </div>
 
-  {#if $gameState.currentCve}
-    <QuestionCard
-      cve={$gameState.currentCve}
-      questionText={questionTexts[$gameState.currentMode] || ''}
-    />
-
-    {#if !$gameState.showExplainer}
-      <div class="choices-grid">
-        {#each $gameState.choices as choice}
-          <ChoiceButton
-            text={choice}
-            onSelect={handleSelect}
-            state={getChoiceState(choice, $gameState)}
-            disabled={$gameState.showExplainer}
-          />
-        {/each}
-      </div>
-
-      <div class="action-buttons">
-        <button class="action-btn skip-btn" onclick={skipQuestion}>
-          Skip
-        </button>
-        <button
-          class="action-btn hint-btn"
-          onclick={useHint}
-          disabled={$gameState.round?.hintsRemaining <= 0}
-        >
-          Hint ({$gameState.round?.hintsRemaining ?? 0})
-        </button>
-      </div>
-    {:else}
-      <!-- Show choices in resolved state -->
-      <div class="choices-grid resolved">
-        {#each $gameState.choices as choice}
-          <ChoiceButton
-            text={choice}
-            onSelect={() => {}}
-            state={getChoiceState(choice, $gameState)}
-            disabled={true}
-          />
-        {/each}
-      </div>
-    {/if}
-
-    {#if $gameState.showExplainer}
-      <Explainer
+    {#if $gameState.currentCve}
+      <QuestionCard
         cve={$gameState.currentCve}
-        mode={$gameState.currentMode}
-        playerAnswer={$gameState.selectedAnswer}
-        correct={$gameState.isCorrect}
+        questionText={questionTexts[$gameState.currentMode] || ''}
       />
+
+      {#if !$gameState.showExplainer}
+        <div class="choices-grid">
+          {#each $gameState.choices as choice}
+            <ChoiceButton
+              text={choice}
+              onSelect={handleSelect}
+              state={getChoiceState(choice, $gameState)}
+              disabled={$gameState.showExplainer}
+            />
+          {/each}
+        </div>
+
+        <div class="action-buttons">
+          <button class="action-btn skip-btn" onclick={skipQuestion}>
+            Skip
+          </button>
+          <button
+            class="action-btn hint-btn"
+            onclick={useHint}
+            disabled={$gameState.round?.hintsRemaining <= 0}
+          >
+            Hint ({$gameState.round?.hintsRemaining ?? 0})
+          </button>
+        </div>
+      {:else}
+        <!-- Show choices in resolved state -->
+        <div class="choices-grid resolved">
+          {#each $gameState.choices as choice}
+            <ChoiceButton
+              text={choice}
+              onSelect={() => {}}
+              state={getChoiceState(choice, $gameState)}
+              disabled={true}
+            />
+          {/each}
+        </div>
+      {/if}
+
+      {#if $gameState.showExplainer}
+        <Explainer
+          cve={$gameState.currentCve}
+          mode={$gameState.currentMode}
+          playerAnswer={$gameState.selectedAnswer}
+          correct={$gameState.isCorrect}
+        />
+      {/if}
     {/if}
+  {:else}
+    <EndRound summary={roundSummary} gameConfig={gameConfig} />
   {/if}
 </div>
 
