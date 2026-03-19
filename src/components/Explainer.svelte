@@ -13,7 +13,10 @@
     cve.cwe
   );
 
-  // Pick the relevant CVSS rationale
+  // Pick the relevant CVSS vector and rationale
+  let cvssVector = $derived(
+    mode === 'cvss4' ? cve.cvss4_vector : cve.cvss3_vector
+  );
   let cvssRationale = $derived(
     mode === 'cvss4' ? cve.cvss4_rationale : cve.cvss3_rationale
   );
@@ -52,6 +55,9 @@
   {#if cvssRationale}
     <div class="section">
       <h3>CVSS Breakdown</h3>
+      {#if cvssVector}
+        <code class="vector-string">{cvssVector}</code>
+      {/if}
       <p>{cvssRationale}</p>
     </div>
   {/if}
@@ -131,6 +137,18 @@
     font-weight: 600;
     color: var(--primary-bright);
     margin-bottom: 0.5rem;
+  }
+
+  .vector-string {
+    display: block;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: var(--primary-bright);
+    margin-bottom: 0.75rem;
+    word-break: break-all;
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
   }
 
   .section p {
