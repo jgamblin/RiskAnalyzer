@@ -61,7 +61,7 @@
 <div class="game-screen">
   {#if !isRoundOver}
     <div class="game-header">
-      <div class="game-info">
+      <div class="game-info" aria-live="polite">
         <span class="question-number">{questionNumber}</span>
         <span class="score-display">{score}</span>
       </div>

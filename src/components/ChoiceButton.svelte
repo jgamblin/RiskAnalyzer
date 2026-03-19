@@ -30,9 +30,14 @@
     transform: scale(1.02);
   }
 
+  .choice-btn:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
   .choice-btn.correct {
     border-color: var(--correct);
     background: rgba(242, 203, 5, 0.1);
+    box-shadow: 0 0 12px rgba(242, 203, 5, 0.3);
   }
 
   .choice-btn.incorrect {
