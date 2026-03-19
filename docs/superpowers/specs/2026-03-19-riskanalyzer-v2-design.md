@@ -38,25 +38,48 @@ Svelte + Vite App (fully static, client-side only)
 
 ### Input
 
-`download_cves.py` downloads the NVD dataset from `http://nvd.handsonhacking.org/nvd.jsonl`. Bug fix: add retry logic (3 attempts with exponential backoff) and validate the downloaded file parses as valid JSON before proceeding.
+`download_cves.py` downloads the NVD dataset from `https://nvd.handsonhacking.org/nvd.jsonl` (upgrade from HTTP to HTTPS). Bug fix: add retry logic (3 attempts with exponential backoff) and validate the downloaded file parses as valid JSON before proceeding. If HTTPS is unavailable, fall back to HTTP with a warning.
 
 ### Enrichment (`enrich_cves.py`)
 
 New script that runs after `download_cves.py`.
 
 Steps:
-1. Download the CWE XML dictionary from MITRE (cached locally, updated weekly)
+1. Download the CWE XML dictionary from MITRE (cached locally, updated weekly). If download fails, fall back to the last cached copy. If no cache exists, fail the build.
 2. Load the NVD JSONL and filter (post-2022, non-rejected, valid CWE, valid CVSS score)
 3. For each CVE:
-   - Extract CVSS 3.0/3.1 score and vector string
-   - Extract CVSS 4.0 score and vector string (when available)
+   - Extract CVSS 3.0/3.1 score and vector string from `cve.metrics.cvssMetricV31[0].cvssData.baseScore` and `.vectorString` (fall back to `cvssMetricV30` path)
+   - Extract CVSS 4.0 score and vector string from `cve.metrics.cvssMetricV40[0].cvssData.baseScore` and `.vectorString` (null when unavailable)
    - Look up CWE name, description, and map to a simplified category
-   - Parse CVSS vector components into plain-English rationale
-   - Generate an explanation connecting the CVE description to its CWE classification
-   - Identify common confusion CWEs (CWEs frequently mistaken for this one)
-   - Assign a difficulty tier (1-5) based on CWE ambiguity and CVSS score clustering
-4. Sample ~1000 CVEs (up from 500) to support adaptive difficulty having enough per tier
+   - Parse CVSS vector components into plain-English rationale using template-based generation (see Explanation Generation below)
+   - Generate an explanation connecting the CVE description to its CWE classification (see Explanation Generation below)
+   - Identify common confusion CWEs from MITRE CWE taxonomy relationships (`<Related_Weaknesses>` — PeerOf, CanPrecede, ChildOf) plus a curated static mapping for the most common CWE pairs
+   - Assign a difficulty tier (1-5) based on CWE ambiguity and CVSS score clustering (see Difficulty Tier Assignment below)
+4. Sample ~1000 CVEs using stratified sampling: target ~200 per tier. If a tier has fewer than 200 candidates, take all available and redistribute remaining slots to adjacent tiers.
 5. Output `src/data/enriched_cves.json`
+
+### Explanation Generation
+
+Explanations are generated using **template-based generation** at build time — no LLM API calls.
+
+**CWE explanations** use templates that combine:
+- The CWE's official name and description from MITRE
+- Keyword matching between the CVE description and CWE-associated terms (see keyword lists below)
+- Template: `"This CVE is classified as {CWE_ID} ({CWE_NAME}) because the description references {MATCHED_KEYWORDS}. {CWE_SHORT_DESCRIPTION}"`
+
+**CVSS rationale** uses vector string parsing:
+- Each CVSS metric component (AV, AC, PR, UI, S, C, I, A for v3.x; expanded set for v4.0) is mapped to a plain-English phrase via a static lookup table
+- Template: `"Score of {SCORE}: {AV_TEXT}, {AC_TEXT}, {PR_TEXT}. Impact: {C_TEXT}, {I_TEXT}, {A_TEXT}."`
+
+**Common mixup explanations** use CWE definition comparison:
+- Template: `"{CONFUSION_CWE} ({CONFUSION_NAME}) — {KEY_DIFFERENTIATOR}"` where `KEY_DIFFERENTIATOR` is derived from comparing the CWE descriptions (e.g., "targets database queries, not HTML output")
+- A curated differentiator table covers the ~50 most common CWE confusion pairs. For pairs not in the table, fall back to showing just the confusion CWE's name and description.
+
+**Keyword lists for CWE matching** (examples, full lists defined in code):
+- CWE-79 (XSS): `["script", "XSS", "cross-site", "reflected", "stored", "DOM", "sanitiz", "escap", "HTML", "JavaScript"]`
+- CWE-89 (SQLi): `["SQL", "query", "injection", "database", "parameteriz"]`
+- CWE-787 (Out-of-bounds Write): `["buffer", "overflow", "out-of-bounds", "write", "memory", "heap", "stack"]`
+- etc. (~30-40 CWE keyword lists covering the most common CWEs)
 
 ### Per-CVE Data Structure
 
@@ -95,12 +118,15 @@ Simplified mapping for filtering and progress tracking:
 
 ### Difficulty Tier Assignment
 
-Tiers 1-5, based on:
-- **CWE ambiguity:** CWEs with many common confusions score higher difficulty
-- **CVSS score clustering:** CVEs with scores near decision boundaries (e.g., 6.9 vs 7.0) score higher
-- **Description clarity:** Descriptions with obvious keywords (e.g., "SQL injection") score lower
+Tiers 1-5. Each CVE gets a composite score (0-100) from three weighted factors:
 
-Distribution target: roughly equal across tiers to ensure enough questions at each level.
+1. **CWE ambiguity (40%):** Number of related CWEs in the MITRE taxonomy (PeerOf, ChildOf). More relations = higher difficulty. Normalized to 0-100.
+2. **CVSS score clustering (30%):** Distance from the nearest "round number" boundary (x.0, x.5). Closer = harder to guess = higher difficulty. E.g., 7.1 is harder than 9.8.
+3. **Description clarity (30%):** Keyword match strength. If the CVE description contains exact CWE-associated keywords (from the keyword lists above), it scores lower difficulty. Score = `100 - (matched_keywords / total_keywords_for_cwe * 100)`.
+
+Composite score mapped to tiers: 0-20 = tier 1, 21-40 = tier 2, 41-60 = tier 3, 61-80 = tier 4, 81-100 = tier 5.
+
+If tiers are heavily skewed after scoring, adjust tier boundaries to achieve roughly 200 CVEs per tier from the candidate pool.
 
 ## Game Engine
 
@@ -109,7 +135,7 @@ Distribution target: roughly equal across tiers to ensure enough questions at ea
 | Mode | Question | Answer choices |
 |---|---|---|
 | CVSS 3.x | "What is this CVE's CVSS 3.x Base Score?" | 4 numeric options |
-| CVSS 4.0 | "What is this CVE's CVSS 4.0 Base Score?" | 4 numeric options (only CVEs with v4 data) |
+| CVSS 4.0 | "What is this CVE's CVSS 4.0 Base Score?" | 4 numeric options (only CVEs with v4 data; mode hidden if <50 CVEs have v4 data) |
 | CWE | "What is this CVE's CWE?" | 4 CWE options |
 | Mixed | Alternates between all three types | 4 options per question |
 
@@ -117,7 +143,14 @@ Distribution target: roughly equal across tiers to ensure enough questions at ea
 
 - Round length: 10, 20, or 30 questions (default 20)
 - Optional CWE category filter (e.g., "injection only")
-- Category filter can be set via URL query param: `?category=injection&mode=cwe` for classroom link sharing
+- Category filter can be set via URL query param for classroom link sharing
+
+**Supported URL query params:**
+- `mode` — `cvss3`, `cvss4`, `cwe`, `mixed` (default: show mode select screen)
+- `category` — any valid CWE category slug: `injection`, `memory`, `auth`, `crypto`, `config`, `info-disclosure`
+- `length` — `10`, `20`, `30` (default: 20)
+- `tier` — `1`-`5` to lock difficulty (disables adaptive; useful for classrooms)
+- Invalid params are silently ignored, falling back to defaults
 
 ### Adaptive Difficulty
 
@@ -134,11 +167,11 @@ Tracks a rolling window of the last 10 answers. Player starts at tier 2.
 - Tier 3-4: Wrong answers from the same CWE category / closer CVSS scores
 - Tier 5: Wrong answers are the `common_confusions` / very close CVSS scores
 
-**Mixed mode bias:** Slightly favors the player's weakest CWE category when selecting questions (based on progress data).
+**Mixed mode bias:** When selecting questions, tier takes priority (driven by adaptive difficulty). Within the selected tier, prefer questions from the player's weakest CWE category if available. If no questions exist at the intersection of the desired tier and weak category, fall back to any question at the target tier.
 
 ### Hints
 
-2 hints per round. A hint removes 2 of the 4 wrong answers, leaving 2 choices.
+2 hints per round. A hint removes 2 of the 3 wrong answers, leaving 2 choices (1 correct + 1 wrong).
 
 ### Skip
 
@@ -183,6 +216,13 @@ Appears in-place after every answer. Player must click "Next Question" to advanc
 ## Progress Tracking System
 
 All data stored in localStorage.
+
+**Storage limits and retention:**
+- Retain the last 100 sessions. Older sessions are pruned on each new session save.
+- Cumulative stats (accuracy by category, streaks) are stored as aggregates, not raw answer history, keeping storage small.
+- Estimated total storage: ~50-100KB, well within the ~5MB localStorage limit.
+- If localStorage is unavailable (private browsing, full storage), the game still works — progress tracking is gracefully disabled with a notice to the player.
+- No migration needed from v1 (v1 has no persistent state).
 
 ### Data Tracked
 
@@ -274,10 +314,29 @@ Updated workflow:
 6. Install npm dependencies, run `npm run build`
 7. Deploy `dist/` to GitHub Pages via `actions/upload-pages-artifact` + `actions/deploy-pages`
 
+### Deployment Transition
+
+- The current setup serves files directly from the repo root on the `main` branch. The new setup deploys build artifacts via Actions.
+- **Required:** Change the GitHub Pages source setting from "Deploy from a branch" to "GitHub Actions" in repository settings.
+- **CNAME:** The custom domain file (`CNAME` with `game.cve.icu`) must be placed in `public/CNAME` so Vite copies it to `dist/` during build.
+- **CSV no longer committed:** The enriched JSON is generated and consumed during the build. Neither `cves.csv` nor `enriched_cves.json` need to be committed to the repo. Add both to `.gitignore`.
+
 ### Bug Fixes
 
 - `download_cves.py`: add 3 retries with exponential backoff, validate JSON integrity before proceeding
 - Upgrade all GitHub Actions from v2 to v4/v5
+
+### Pipeline Failure Handling
+
+- If `download_cves.py` fails after all retries: Action fails, no deploy. The previous deployment remains live.
+- If `enrich_cves.py` fails (e.g., MITRE CWE download fails with no cache): Action fails, no deploy.
+- If enrichment produces fewer than 500 viable CVEs: Action fails with a clear error message. Threshold is 500 minimum (below this, adaptive difficulty can't function well).
+
+## Accessibility
+
+- Color contrast: verify all text/background combinations meet WCAG 2.1 AA (4.5:1 for normal text, 3:1 for large text). The muted red on dark charcoal and gold on dark charcoal must be tested.
+- Keyboard navigation: all interactive elements (buttons, choices, nav) must be reachable via Tab and activatable via Enter/Space
+- Screen reader: semantic HTML, ARIA labels on game state changes (correct/incorrect announcements)
 
 ## Out of Scope
 
@@ -285,3 +344,5 @@ Updated workflow:
 - Real-time multiplayer
 - AI-powered explanations at runtime
 - Mobile native apps
+- Automated testing (deferred to a follow-up iteration)
+- Bundle size budget (the ~1MB JSON payload is acceptable for a daily-refreshed educational tool; optimize later if needed)
