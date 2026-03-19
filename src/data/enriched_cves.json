@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "generated": "2026-03-19T00:00:00Z",
+    "total": 5,
+    "cvss4_count": 1,
+    "tiers": {
+      "1": 1,
+      "2": 1,
+      "3": 1,
+      "4": 1,
+      "5": 1
+    }
+  },
+  "cves": [
+    {
+      "cve": "CVE-2024-0001",
+      "description": "A SQL injection vulnerability in the login form allows attackers to bypass authentication by injecting malicious SQL statements.",
+      "cvss3_score": 9.8,
+      "cvss3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "cvss3_rationale": "Score of 9.8: attack is network-accessible; low attack complexity; no privileges required; no user interaction needed; high confidentiality impact; high integrity impact; high availability impact.",
+      "cvss4_score": null,
+      "cvss4_vector": null,
+      "cvss4_rationale": null,
+      "cwe": "CWE-89",
+      "cwe_name": "Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')",
+      "cwe_description": "The product constructs all or part of an SQL command using externally-influenced input.",
+      "cwe_category": "injection",
+      "explanation": "This CVE is classified as CWE-89 (SQL Injection) because the description references SQL injection and authentication bypass.",
+      "common_confusions": [
+        {
+          "cwe": "CWE-79",
+          "name": "Cross-site Scripting",
+          "differentiator": "XSS targets browser-rendered HTML, not database queries"
+        },
+        {
+          "cwe": "CWE-78",
+          "name": "OS Command Injection",
+          "differentiator": "OS Command Injection targets system commands, not SQL"
+        }
+      ],
+      "difficulty_tier": 1
+    },
+    {
+      "cve": "CVE-2024-0002",
+      "description": "An out-of-bounds write vulnerability in the image processing library allows remote attackers to execute arbitrary code via a crafted PNG file.",
+      "cvss3_score": 7.8,
+      "cvss3_vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+      "cvss3_rationale": "Score of 7.8: attack requires local access; low attack complexity; no privileges required; requires user interaction; high confidentiality impact; high integrity impact; high availability impact.",
+      "cvss4_score": 8.2,
+      "cvss4_vector": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:A/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      "cvss4_rationale": "Score of 8.2: attack requires local access; low attack complexity; no privileges required; active user interaction required.",
+      "cwe": "CWE-787",
+      "cwe_name": "Out-of-bounds Write",
+      "cwe_description": "The product writes data past the end, or before the beginning, of the intended buffer.",
+      "cwe_category": "memory",
+      "explanation": "This CVE is classified as CWE-787 because the description mentions out-of-bounds write and memory corruption.",
+      "common_confusions": [
+        {
+          "cwe": "CWE-125",
+          "name": "Out-of-bounds Read",
+          "differentiator": "Out-of-bounds read leaks data; out-of-bounds write corrupts data"
+        },
+        {
+          "cwe": "CWE-119",
+          "name": "Buffer Errors",
+          "differentiator": "CWE-119 is the parent category covering all buffer operations"
+        }
+      ],
+      "difficulty_tier": 2
+    },
+    {
+      "cve": "CVE-2024-0003",
+      "description": "Improper authentication in the admin panel allows unauthenticated remote attackers to access sensitive configuration settings.",
+      "cvss3_score": 7.5,
+      "cvss3_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "cvss3_rationale": "Score of 7.5: attack is network-accessible; low attack complexity; no privileges required; no user interaction needed; high confidentiality impact.",
+      "cvss4_score": null,
+      "cvss4_vector": null,
+      "cvss4_rationale": null,
+      "cwe": "CWE-287",
+      "cwe_name": "Improper Authentication",
+      "cwe_description": "When an actor claims to have a given identity, the product does not prove or insufficiently proves that the claim is correct.",
+      "cwe_category": "auth",
+      "explanation": "This CVE is classified as CWE-287 because the description mentions improper authentication and unauthorized access.",
+      "common_confusions": [
+        {
+          "cwe": "CWE-306",
+          "name": "Missing Authentication",
+          "differentiator": "CWE-306 is missing authentication entirely; CWE-287 is improper authentication"
+        }
+      ],
+      "difficulty_tier": 3
+    },
+    {
+      "cve": "CVE-2024-0004",
+      "description": "Use of a broken cryptographic algorithm in the session token generation allows attackers to predict session tokens and hijack user sessions.",
+      "cvss3_score": 5.9,
+      "cvss3_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "cvss3_rationale": "Score of 5.9: attack is network-accessible; high attack complexity; no privileges required; high confidentiality impact.",
+      "cvss4_score": null,
+      "cvss4_vector": null,
+      "cvss4_rationale": null,
+      "cwe": "CWE-327",
+      "cwe_name": "Use of a Broken or Risky Cryptographic Algorithm",
+      "cwe_description": "The product uses a broken or risky cryptographic algorithm or protocol.",
+      "cwe_category": "crypto",
+      "explanation": "This CVE is classified as CWE-327 because the description mentions broken cryptographic algorithm usage.",
+      "common_confusions": [
+        {
+          "cwe": "CWE-330",
+          "name": "Insufficient Randomness",
+          "differentiator": "CWE-330 is about weak randomness; CWE-327 is about weak cryptographic algorithms"
+        }
+      ],
+      "difficulty_tier": 4
+    },
+    {
+      "cve": "CVE-2024-0005",
+      "description": "A race condition in the file locking mechanism allows concurrent processes to corrupt shared data structures leading to denial of service.",
+      "cvss3_score": 5.1,
+      "cvss3_vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "cvss3_rationale": "Score of 5.1: attack requires local access; high attack complexity; no privileges required; high availability impact.",
+      "cvss4_score": null,
+      "cvss4_vector": null,
+      "cvss4_rationale": null,
+      "cwe": "CWE-362",
+      "cwe_name": "Concurrent Execution Using Shared Resource with Improper Synchronization ('Race Condition')",
+      "cwe_description": "The product contains a code sequence that can run concurrently with other code.",
+      "cwe_category": "other",
+      "explanation": "This CVE is classified as CWE-362 because the description references race condition and concurrent access.",
+      "common_confusions": [
+        {
+          "cwe": "CWE-367",
+          "name": "TOCTOU Race Condition",
+          "differentiator": "TOCTOU is a specific type of race condition between check and use"
+        }
+      ],
+      "difficulty_tier": 5
+    }
+  ]
+}
