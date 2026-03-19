@@ -180,3 +180,4 @@ dist/
 # Generated data
 src/data/enriched_cves.json
 cves.csv
+pipeline/cwe_cache.xml
