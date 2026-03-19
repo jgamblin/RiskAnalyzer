@@ -2,6 +2,7 @@
   import TopNav from './components/TopNav.svelte';
   import HomeScreen from './components/HomeScreen.svelte';
   import GameScreen from './components/GameScreen.svelte';
+  import Dashboard from './components/Dashboard.svelte';
   import { currentScreen, gameState } from './lib/stores/game.js';
 </script>
 
@@ -16,6 +17,6 @@
   {:else if $currentScreen === 'game'}
     <GameScreen />
   {:else if $currentScreen === 'dashboard'}
-    <p>Dashboard coming soon</p>
+    <Dashboard />
   {/if}
 </main>
