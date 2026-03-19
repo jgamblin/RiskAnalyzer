@@ -300,7 +300,7 @@ Contains two data structures:
    - Note: CWE-269 (Improper Privilege Management) and CWE-276 (Incorrect Default Permissions) are placed in `config` per spec, not `auth`
    - `crypto`: 295, 310, 320, 326, 327, 328, 330, 331, 338, 347
    - `config`: 16, 269, 276, 434, 502, 611, 668, 732, 829, 918
-   - `info-disclosure`: 200, 201, 203, 209, 215, 312, 319, 359, 532, 538, 548, 611
+   - `info-disclosure`: 200, 201, 203, 209, 215, 312, 319, 359, 532, 538, 548
    - Anything else: `other`
 
 2. `CWE_KEYWORDS` — dict mapping CWE IDs to lists of keyword strings used for explanation generation and difficulty scoring. Cover the ~35 most common CWEs. Examples in spec.
