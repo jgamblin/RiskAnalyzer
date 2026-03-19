@@ -14,8 +14,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -171,3 +171,13 @@ cython_debug/
 .pypirc
 
 nvd.jsonl
+.worktrees/
+
+# Node / Vite
+node_modules/
+dist/
+
+# Generated data
+src/data/enriched_cves.json
+cves.csv
+pipeline/cwe_cache.xml
