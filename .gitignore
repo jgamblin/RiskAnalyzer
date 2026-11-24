@@ -172,6 +172,7 @@ cython_debug/
 
 nvd.jsonl
 .worktrees/
+.claude/worktrees/
 
 # Node / Vite
 node_modules/
